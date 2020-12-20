@@ -24,12 +24,12 @@
 
 
 # TODO
-* client
+## * client
  * délai sur client & underrun!!! (at least 0.036 ms long)
  * autostart on boot avec PM2
  * faire socket.emit status si le block plante
  
-* server
+## * server
  * SSL générer .cert et .pem
  * vérifier le tableau des présents sur la socket
  * prévoir le cas ou un block plante
