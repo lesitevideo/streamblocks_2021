@@ -17,8 +17,8 @@
   * cd streamblocks_2021
   * npm install
   * configurer variables dans client.js :
-   * ip serveur web => const macpro_ip = 'http://192.168.2.22:1664';
-   * ID du block => const BLOCK_ID = 23;
+    * ip serveur web => const macpro_ip = 'http://192.168.2.22:1664';
+    * ID du block => const BLOCK_ID = 23;
 
 * usage : node client.js | aplay -f S16_LE  -c1 -r 44100 -B 100000
 
