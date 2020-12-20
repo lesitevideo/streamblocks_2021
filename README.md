@@ -16,6 +16,9 @@
   * git clone https://github.com/lesitevideo/streamblocks_2021/
   * cd streamblocks_2021
   * npm install
+  * configurer variables dans client.js :
+   * ip serveur web => const macpro_ip = 'http://192.168.2.22:1664';
+   * ID du block => const BLOCK_ID = 23;
 
 * usage : node client.js | aplay -f S16_LE  -c1 -r 44100 -B 100000
 
@@ -27,6 +30,7 @@
  * faire socket.emit status si le block plante
  
 * server
+ * SSL générer .cert et .pem
  * vérifier le tableau des présents sur la socket
  * prévoir le cas ou un block plante
  * faire un json 'scene status' avec les états de tous les blocks et leurs infos
