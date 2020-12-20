@@ -10,6 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "socket.io-client": "^3.0.4",
-    "stdout-stream": "^1.4.1",
+    "stdout-stream": "^1.4.1"
   }
 }
