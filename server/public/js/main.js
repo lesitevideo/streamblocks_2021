@@ -162,7 +162,7 @@ $( document ).ready(function() {
                   context = new AudioContext({sampleRate: 48000});
 				  console.log( context );
                   var audioInput = context.createMediaStreamSource(stream);
-                  var bufferSize = 2048;
+                  var bufferSize = 1024;
 
                   recorder = context.createScriptProcessor(bufferSize, 1, 1);
 
