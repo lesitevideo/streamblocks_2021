@@ -9,13 +9,13 @@ $( document ).ready(function() {
 			  video:false,
 			  audio:true
 		  };
-		  console.log( new AudioContext() );
+		  console.log( new AudioContext({sampleRate: 48000}) );
  
           var client,
               recorder,
               context,
               bStream,
-              contextSampleRate = (new AudioContext()).sampleRate;
+              contextSampleRate = (new AudioContext({sampleRate: 48000})).sampleRate;
               resampleRate = contextSampleRate,
               worker = new Worker('js/worker/resampler-worker.js');
 
@@ -152,17 +152,17 @@ $( document ).ready(function() {
 					audio: {
 						sampleSize: 16,
 						channelCount: 1,
-						//latency:0.01
-						//echoCancellation:true
+						echoCancellation: false,
+						latency: 0.10
 					},
 					video: false
 				};
 			  
               navigator.mediaDevices.getUserMedia(session).then(function(stream) {
-                  context = new AudioContext();
+                  context = new AudioContext({sampleRate: 48000});
 				  console.log( context );
                   var audioInput = context.createMediaStreamSource(stream);
-                  var bufferSize = 1024;
+                  var bufferSize = 2048;
 
                   recorder = context.createScriptProcessor(bufferSize, 1, 1);
 
