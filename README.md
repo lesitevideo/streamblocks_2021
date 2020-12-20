@@ -20,7 +20,7 @@
     * ip serveur web => const macpro_ip = 'http://192.168.2.22:1664';
     * ID du block => const BLOCK_ID = 23;
 
-* usage : node client.js | aplay -f S16_LE -c1 -r 48000 -B 100000
+* usage : node client.js | aplay -f S16_LE -c1 -r 48000 -B 100000  --buffer-size=1024
 
 
 # TODO
