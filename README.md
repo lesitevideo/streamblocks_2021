@@ -6,7 +6,7 @@
 
 * usage : node server.js
 
-## 2 - clientsur raspberry
+## 2 - client sur raspberry
 
 * install : npm install
 
