@@ -31,6 +31,7 @@
  
 ## server
  * SSL générer .cert et .pem
+ * capture en 48000 car la carte son du rpi est en 48000 https://learn.adafruit.com/adafruit-max98357-i2s-class-d-mono-amp/raspberry-pi-usage
  * vérifier le tableau des présents sur la socket
  * prévoir le cas ou un block plante
  * faire un json 'scene status' avec les états de tous les blocks et leurs infos
