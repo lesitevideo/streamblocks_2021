@@ -34,4 +34,5 @@
  * vérifier le tableau des présents sur la socket
  * prévoir le cas ou un block plante
  * faire un json 'scene status' avec les états de tous les blocks et leurs infos
- * prévoir une case à cocher pour broadcaster à tous ou emit à un seul
+ * sur l'interface web prévoir une case à cocher pour broadcaster à tous ou emit à un seul
+ * sur l'interface web pouvoir choisir les channels des input sources
