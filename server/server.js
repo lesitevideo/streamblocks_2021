@@ -1,8 +1,21 @@
 //requires
 const express = require('express');
+const fs = require('fs');
 const app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+
+// Certificate
+const privateKey = fs.readFileSync('ssl/localhost.key', 'utf8');
+const certificate = fs.readFileSync('ssl/localhost.crt', 'utf8');
+//const ca = fs.readFileSync('ssl/kinoki.cer', 'utf8');
+
+const credentials = {
+	key: privateKey,
+	cert: certificate,
+	//ca: ca
+};
+
+var http = require('http').Server( app );
+var io = require('socket.io')(http, { wsEngine: 'ws' });
 
 var connected_blocks = [];
 
