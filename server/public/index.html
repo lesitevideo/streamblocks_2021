@@ -59,7 +59,29 @@
 				  <h2>Ma scene</h2>
 			  </div>
 			  <div class="col-sm-12 text-center" style="margin-top:25px;">
-				  <button id="bt_refresh" type="button" class="btn-stop btn btn-primary">Refresh</button>
+				  <div class="card">
+					  <div class="card-body">
+						  <div class=" float-left">
+							  <label>Samplerate: </label>
+							  <select id="select_samplerate" class="form-select" aria-label="Default select example">
+								  <option value="44100">44100</option>
+								  <option selected value="48000">48000</option>
+							  </select>
+							  &nbsp;
+							  <label>Buffersize: </label>
+							  <select class="form-select" disabled aria-label="Default select example">
+								  <option disabled selected>Buffersize</option>
+								  <option value="512">512</option>
+								  <option value="1024">1024</option>
+								  <option value="2048">2048</option>
+								  <option value="4096">4096</option>
+								  <option value="8192">8192</option>
+							  </select>
+						  </div>
+						  &nbsp;
+						  <button id="bt_refresh" type="button" class="btn-stop btn btn-primary float-right">Refresh scene</button>
+					  </div>
+				  </div>
 			  </div>
 		  </div>
           <div class="row" id="scene">
@@ -87,16 +109,17 @@
 			
 			<div class="select">
 				<label>Audio input source: </label>
-				
 			</div>
         </div>
     </div>
 	  
 
     <script src="js/jquery-3.4.1.min.js"></script> 
-    <script src="js/popper.min.js"></script> 
-    <script src="js/bootstrap-4.4.1.js"></script>
-	<script src="/socket.io/socket.io.js"></script>
+    <!--<script src="js/popper.min.js"></script> 
+    <script src="js/bootstrap-4.4.1.js"></script>-->
+	  <script src="js/bootstrap.bundle.min.js"></script>
+	  
+	  <script src="/socket.io/socket.io.js"></script>
 	  <script src="js/main.js"></script>
 	  
 	  <script>
