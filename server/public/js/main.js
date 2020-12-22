@@ -1,199 +1,162 @@
 $( document ).ready(function() {
-		  
-		 var recorder;	  
-		  var socket = io();
-		  socket.binaryType = 'arraybuffer';
-			  
-		  var device_list = [];
-	  	  var rules = {
-			  video:false,
-			  audio:true
-		  };
-		  console.log( new AudioContext({sampleRate: 48000}) );
- 
-          var client,
-              recorder,
-              context,
-              bStream,
-              contextSampleRate = (new AudioContext({sampleRate: 48000})).sampleRate;
-              resampleRate = contextSampleRate,
-              worker = new Worker('js/worker/resampler-worker.js');
+		
+	var context_samplerate;
+	
+	var recorder;	
+	
+    var socket = io();
+    socket.binaryType = 'arraybuffer';
 
-          worker.postMessage({cmd:"init",from:contextSampleRate,to:resampleRate});
+    var device_list = [];
+    var rules = {
+        video:false,
+        audio:true
+    };
+    //console.log( new AudioContext({sampleRate: 48000}) );
 
-          worker.addEventListener('message', function (e) {
-              if (bStream && bStream.writable)
-                  bStream.write(convertFloat32ToInt16(e.data.buffer));
-          }, false);
-			  
-		  socket.on('connect', function(){
-			  console.log('log');
-			  //socket.emit('get status', '');
-		  });
-		  
-		  socket.on('blocks status', function(data){
-			  console.log(data);
-			  
-			 $('#scene').html('');
-			  
-			  data.forEach(function(item){
-				  $('#scene').append( $('#block_template').html() );
-				  $('#scene').find( "h3" ).text( 'Block ' + item.block_id  );
-				  $('#scene').find( ".socket_id" ).text( item.socket_id  );  
-				  
-			  });
-			  set_blocks_inputsources();
-		  });
-		  
-		  
-			  
-			  
-			  
-			  
-			  $('#bt_refresh').on('click',function(){
-				  socket.emit('get status', '');
-			  })
-			  
-			  
-			  
-		  
-		  
-		  function set_blocks_inputsources(){
-			  navigator.mediaDevices.getUserMedia( rules )
-				.then(stream => 
-					navigator.mediaDevices
-					.enumerateDevices()
-					.then(devices => {
-					  return devices
-					})
-					.catch(err => {throw err})
-				)
-				.then(devices => {
-				  device_list = devices;
-				  
-				  //lister les blocks sur scene
-				   $('.block .select').each(function( index ) {
-					   
-					   var select = document.createElement( "select" );
-					   select.id = "select" + index;
-					   
-					   var btplay = document.createElement( "button" );
-					   var btstop = document.createElement( "button" );
-					   
-					   btplay.classList.add("btn-play","btn","btn-primary");
-					   btplay.id = "btplay"+index;
-					   btplay.innerHTML = "Play";
-					   btplay.type = "button";
-					   
-					   btstop.classList.add("btn-stop","btn","btn-primary");
-					   btstop.id = "btstop"+index;
-					   btstop.innerHTML = "Stop";
-					   btstop.type = "button";
-					   
-					   devices.forEach(function(device) {
-						   if( device.kind == 'audioinput'  ){
-							   //console.log(device.kind + ": " + device.label + " id = " + device.deviceId);
-							   var added = document.createElement('option');
-							   added.value = device.label;
-							   added.innerHTML = device.label;
-							   select.append(added);
-						   }	
-					   });
-					
-					   btplay.dataset.socketid = $( this ).parent().find('.socket_id').text();
-					   btstop.dataset.socketid = $( this ).parent().find('.socket_id').text();
-					   
-					   var wrapper;
-					   
-					   if ($(".audio_options_wrapper")[index]){
-						   wrapper = $(".audio_options_wrapper")[index];
-						   wrapper.classList.add("audio_options_wrapper");
-						   wrapper.html('');
-					   } else {
-						   wrapper = document.createElement( "div" );
-					   }
-					   
-					   wrapper.append( select, btplay, btstop );
-					   
-					   $( this ).html( wrapper );
-					   
-					   // start stream
-					   btplay.addEventListener('click', function(){
-						   //console.log( select.value );
-						   
-						   // voice stream
-						   stream_to_block( btplay.dataset.socketid );
+    var client,
+        recorder,
+        context,
+        bStream;
+        /*contextSampleRate = (new AudioContext({sampleRate: 48000})).sampleRate;
+        resampleRate = contextSampleRate,
+        worker = new Worker('js/worker/resampler-worker.js');
 
-					   })
-					   
-					   // stop stream
-					   btstop.addEventListener('click', function(){
-						   close( btstop.dataset.socketid );
-					   })
-				  });
-				  
-				})
-				.catch(err => console.error(err));			  
-		  }
+        worker.postMessage({cmd:"init",from:contextSampleRate,to:resampleRate});
+
+        worker.addEventListener('message', function (e) {
+            if (bStream && bStream.writable)
+                bStream.write(convertFloat32ToInt16(e.data.buffer));
+        }, false);
+        */
+
+
+	/*------ SOCKET -------*/
+
+    socket.on('connect', function(){
+        console.log('connected to socket');
+        //socket.emit('get status', '');
+    });
+
+    socket.on('blocks status', function(data){
+        console.log('blocks status => ', data);
+
+       $('#scene').html('');
+
+        data.forEach(function(item){
+            $('#scene').append( $('#block_template').html() );
+            $('#scene').find( "h3" ).text( 'Block ' + item.block_id  );
+            $('#scene').find( ".socket_id" ).text( item.socket_id  );  
+
+        });
+        set_blocks_inputsources();
+    });
+
+
+
+
+	/*------ BOUTONS interface -------*/
+
+    $('#bt_refresh').on('click',function(){
+        socket.emit('get status', '');
+    })
+
+			  
+			  
+		  
+		  
+	/*------ AUDIO -------*/
 		  
 
 			  
-          function close(){
-              console.log('close');
-              if(recorder)
-                  recorder.disconnect();
-              //if(client)
-                 // client.close();
-          }
+    function close(){ // <- todo : passer en variable le recorder à arreter ( et donc avant faire un array dynamique avec les recorders actifs )
+        console.log('close');
+        if(recorder){
+            recorder.disconnect();
+        }
+        socket.emit( 'stop stream', '' );
+    }
 		  
-		  function stream_to_block( socket_id ){
+	
+			
+    function stream_to_block( socket_id ){
+
+        var constraints = {
+			audio: {
+				sampleSize: 16,
+				channelCount: 1,
+				autoGainControl:false,
+				//echoCancellation: true,
+				//latency: 0.10
+			},
+			video: false
+		};
+
+        close();
+		
+        navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+			
+			console.log( "streaming" )
+			
+			/*
+			context = new AudioContext({
+				latencyHint: 'interactive',
+				sampleRate: 44100
+			});
+			var audioInput = context.createMediaStreamSource(stream);
+			context.audioWorklet.addModule('js/worklet.js').then(() => {
 				
-			  var session = {
-					audio: {
-						sampleSize: 16,
-						channelCount: 1,
-						echoCancellation: false,
-						latency: 0.10
-					},
-					video: false
+			  	let recorder = new AudioWorkletNode(context, 'port-processor');
+				
+				recorder.port.onmessage = (event) => {
+					// Handling data from the processor.
+					console.log( event.data.data );
 				};
-			  
-              navigator.mediaDevices.getUserMedia(session).then(function(stream) {
-                  context = new AudioContext({sampleRate: 48000});
-				  console.log( context );
-                  var audioInput = context.createMediaStreamSource(stream);
-                  var bufferSize = 1024;
 
-                  recorder = context.createScriptProcessor(bufferSize, 1, 1);
+			  recorder.port.postMessage('Hello!');
+			  audioInput.connect(recorder).connect(context.destination)	
+			});
+			*/
+			context_samplerate = $('#select_samplerate').val();
+			console.log( context_samplerate  );
 
-                  //recorder.onaudioprocess = onAudio;
-				  recorder.onaudioprocess = function(e){
-					  var left = e.inputBuffer.getChannelData(0);
-					  
-					  var array = convertFloat32ToInt16( left );
-					  var data = {
-                          socket_id: socket_id,
-                          sampleRate: context.sampleRate,
-                          stream: array
-                      };
-					  
-					  socket.emit( 'binaryData', data );
-					  
-					  
-				  };
+           context = new AudioContext({
+               sampleRate: context_samplerate,
+               //latencyHint: 'interactive'
+           });
 
-                  audioInput.connect(recorder);
+			console.log(context);
 
-                  recorder.connect(context.destination);
+            var audioInput = context.createMediaStreamSource(stream);
+            var bufferSize = 0;
 
-              }).catch(function(err) {
+            recorder = context.createScriptProcessor(bufferSize, 1, 1); // <-- createScriptProcessor obsolete cf. https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createScriptProcessor
 
-              });	
-			  
-			  
+            recorder.onaudioprocess = function(e){
+                var left = e.inputBuffer.getChannelData(0);
+
+                var array = convertFloat32ToInt16( left );
+                var data = {
+                    socket_id: socket_id,
+                    sampleRate: context_samplerate,
+                    bufferSize:bufferSize,
+                    stream: array
+                };
 				
+                socket.emit( 'binaryData', data );
+            };
 
-		  }
+            audioInput.connect(recorder);
+            recorder.connect(context.destination);
+
+
+        }).catch(function(err) {
+
+        });
+        
+
+
+    }
 	
 		  
     function onAudio(e) {
@@ -204,9 +167,8 @@ $( document ).ready(function() {
        //drawBuffer(left);
     }
 		  
-
-
-    function convertFloat32ToInt16(buffer) {
+    
+	function convertFloat32ToInt16(buffer) {
         var l = buffer.length;
         var buf = new Int16Array(l);
         while (l--) {
@@ -214,6 +176,88 @@ $( document ).ready(function() {
         }
         return buf.buffer;
     }
+	
+	
+    
+	function set_blocks_inputsources(){
+        navigator.mediaDevices.getUserMedia( rules )
+          .then(stream => 
+              navigator.mediaDevices
+              .enumerateDevices()
+              .then(devices => {
+                return devices
+              })
+              .catch(err => {throw err})
+          )
+          .then(devices => {
+            device_list = devices;
+
+            //lister les blocks sur scene
+             $('.block .select').each(function( index ) {
+
+                 var select = document.createElement( "select" );
+                 select.id = "select" + index;
+
+                 var btplay = document.createElement( "button" );
+                 var btstop = document.createElement( "button" );
+
+                 btplay.classList.add("btn-play","btn","btn-primary");
+                 btplay.id = "btplay"+index;
+                 btplay.innerHTML = "Play";
+                 btplay.type = "button";
+
+                 btstop.classList.add("btn-stop","btn","btn-primary");
+                 btstop.id = "btstop"+index;
+                 btstop.innerHTML = "Stop";
+                 btstop.type = "button";
+
+                 devices.forEach(function(device) {
+                     if( device.kind == 'audioinput'  ){
+                         //console.log(device.kind + ": " + device.label + " id = " + device.deviceId);
+                         var added = document.createElement('option');
+                         added.value = device.label;
+                         added.innerHTML = device.label;
+                         select.append(added);
+                     }	
+                 });
+
+                 btplay.dataset.socketid = $( this ).parent().find('.socket_id').text();
+                 btstop.dataset.socketid = $( this ).parent().find('.socket_id').text();
+
+                 var wrapper;
+
+                 if ($(".audio_options_wrapper")[index]){
+                     wrapper = $(".audio_options_wrapper")[index];
+                     wrapper.classList.add("audio_options_wrapper");
+                     wrapper.html('');
+                 } else {
+                     wrapper = document.createElement( "div" );
+                 }
+
+                 wrapper.append( select, btplay, btstop );
+
+                 $( this ).html( wrapper );
+
+                 // start stream
+                 btplay.addEventListener('click', function(){
+                     //console.log( select.value );
+
+                     // voice stream
+                     stream_to_block( btplay.dataset.socketid );
+
+                 })
+
+                 // stop stream
+                 btstop.addEventListener('click', function(){
+                     close( btstop.dataset.socketid );
+                 })
+            });
+
+          })
+          .catch(err => console.error(err));			  
+    }
+	
+	
 
     //https://github.com/cwilso/Audio-Buffer-Draw/blob/master/js/audiodisplay.js
     function drawBuffer(data) {
@@ -268,3 +312,4 @@ $( document ).ready(function() {
 		  
 		  
 		  });
+
