@@ -13,6 +13,19 @@
 			  background-color: #fff;
 			  border-radius: 20px;
 		  }
+		  
+		  #debug{
+			  margin-top: 25px;
+			  padding: 35px;
+			  background-color: #535353;
+			  border-radius: 20px;
+			  color: white;
+			  font-size:12px;
+			  line-height: 14px;
+			  max-height: 450px;
+			  overflow: auto;
+		  }
+		  
 		  section{
 			  padding-left: 25px;
 			  padding-right: 25px;
@@ -58,34 +71,60 @@
 			  <div class="col-sm-12 text-center" style="margin-top:25px;">
 				  <h2>Ma scene</h2>
 			  </div>
-			  <div class="col-sm-12 text-center" style="margin-top:25px;">
-				  <div class="card">
-					  <div class="card-body">
-						  <div class=" float-left">
-							  <label>Samplerate: </label>
-							  <select id="select_samplerate" class="form-select" aria-label="Default select example">
-								  <option value="44100">44100</option>
-								  <option selected value="48000">48000</option>
-							  </select>
-							  &nbsp;
-							  <label>Buffersize: </label>
-							  <select class="form-select" disabled aria-label="Default select example">
-								  <option disabled selected>Buffersize</option>
-								  <option value="512">512</option>
-								  <option value="1024">1024</option>
-								  <option value="2048">2048</option>
-								  <option value="4096">4096</option>
-								  <option value="8192">8192</option>
-							  </select>
+			  <div class="col-sm-12 text-center" style="margin-top:25px; padding:0px;">
+				  <div class="card" style="padding: 0px 15px; border:none;background-color: #fff;border-radius: 20px;">
+					  <div class="card-body row">
+						  <div class="col-8">
+							  
+							  <div class="row">
+								  <div class="col-12 text-left">
+									  <label>Samplerate: </label>
+									  <select id="select_samplerate" class="form-select" aria-label="Default select example">
+										  <option value="44100">44100</option>
+										  <option selected value="48000">48000</option>
+									  </select>
+									  &nbsp;
+									  <label>Buffersize (auto): </label>
+									  
+									  <select id="select_buffersize" class="form-select" disabled aria-label="Default select example">
+										  <option value="0" disabled selected>Buffersize</option>
+										  <option value="512">512</option>
+										  <option value="1024">1024</option>
+										  <option value="2048">2048</option>
+										  <option value="4096">4096</option>
+										  <option value="8192">8192</option>
+									  </select>
+								  </div>	  
+							  </div>
+							  <div class="row">
+								  <div class="col-12 text-left"">
+									  <label for="checkbox_autoGainControl">autoGainControl</label>
+									  <input type="checkbox" value="" id="checkbox_autoGainControl">
+
+
+									  &nbsp;
+									  <label for="checkbox_echoCancellation">echoCancellation</label>
+									  <input type="checkbox" value="" id="checkbox_echoCancellation">
+								  </div>
+                              </div>
+							  
+							  
+							  
 						  </div>
-						  &nbsp;
+						  <div class="col-4">
 						  <button id="bt_refresh" type="button" class="btn-stop btn btn-primary float-right">Refresh scene</button>
+						  </div>
 					  </div>
 				  </div>
 			  </div>
 		  </div>
           <div class="row" id="scene">
           </div>
+									 
+		
+          <div class="row" id="debug">
+          </div>
+
       </div>
       
       
