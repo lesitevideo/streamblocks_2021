@@ -80,9 +80,14 @@ io.on('connection', function (socket) {
 		socket.emit('blocks status', connected_blocks);
     });
 	
+	socket.on('stderr', function ( stderr ){
+		console.log( stderr );
+    });
+	
 	socket.on('binaryData', function ( binaryData ){
 		//console.log( 'send binaryData ');
-		socket.broadcast.emit('binaryData', binaryData);
+		io.to( binaryData.socket_id ).emit( 'binaryData', binaryData );
+		//socket.broadcast.emit('binaryData', binaryData);
     });
 	
 	socket.on('wrtcchannelName', function ( wrtcchannelName ){
