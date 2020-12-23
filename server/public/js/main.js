@@ -133,8 +133,7 @@ $( document ).ready(function() {
 			
 			
 			context = new AudioContext({
-               sampleRate: context_samplerate,
-               //latencyHint: 'interactive'
+               sampleRate: context_samplerate
 			});
 			
 			debug.append( '----------------------------------<br>' );
@@ -145,9 +144,11 @@ $( document ).ready(function() {
 				
 			  	let recorder = new AudioWorkletNode(context, 'port-processor');
 				
-				console.log( recorder ); //sampleRate + state
+				//console.log( recorder ); //sampleRate + state
 				
 				debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + '</br>' );
+				$('#select_buffersize').val( recorder.bufferSize );
+				
 				var tcid = makeid(5);
 				debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
 				
