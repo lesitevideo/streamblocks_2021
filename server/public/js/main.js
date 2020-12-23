@@ -12,25 +12,14 @@ $( document ).ready(function() {
         video:false,
         audio:true
     };
-    //console.log( new AudioContext({sampleRate: 48000}) );
 
     var client,
         recorder,
         context,
         bStream;
-        /*contextSampleRate = (new AudioContext({sampleRate: 48000})).sampleRate;
-        resampleRate = contextSampleRate,
-        worker = new Worker('js/worker/resampler-worker.js');
 
-        worker.postMessage({cmd:"init",from:contextSampleRate,to:resampleRate});
-
-        worker.addEventListener('message', function (e) {
-            if (bStream && bStream.writable)
-                bStream.write(convertFloat32ToInt16(e.data.buffer));
-        }, false);
-        */
-
-
+	var debug = $('#debug');
+	
 	/*------ SOCKET -------*/
 
     socket.on('connect', function(){
@@ -71,9 +60,15 @@ $( document ).ready(function() {
 			  
     function close(){ // <- todo : passer en variable le recorder à arreter ( et donc avant faire un array dynamique avec les recorders actifs )
         console.log('close');
+		debug.append('<b>close</b><br>');
+		
         if(recorder){
             recorder.disconnect();
         }
+		if(context){
+            context.close();
+        }
+		$('#select_buffersize').val( 0 );
         socket.emit( 'stop stream', '' );
     }
 		  
@@ -81,75 +76,137 @@ $( document ).ready(function() {
 			
     function stream_to_block( socket_id ){
 
+		var autoGainControl = $('#checkbox_autoGainControl').is(':checked');
+		var echoCancellation = $('#checkbox_echoCancellation').is(':checked');
+		var audioSource = $('#select0').val();  
+		
+		
+		if (window.stream) {
+          window.stream.getTracks().forEach(track => {
+            track.stop();
+          });
+        }
+		
+		
+		
         var constraints = {
 			audio: {
 				sampleSize: 16,
 				channelCount: 1,
-				autoGainControl:false,
-				//echoCancellation: true,
-				//latency: 0.10
+				autoGainControl: autoGainControl,
+				echoCancellation: echoCancellation,
+				deviceId: audioSource,
+				latency: 0.002902,
 			},
 			video: false
 		};
-
-        close();
+		debug.append( 'constraints => ' + JSON.stringify( constraints) + '<br>' );
+		console.log( constraints );
+        //close();
 		
+            /*const constraints = {
+              audio: {deviceId: audioSource ? {exact: audioSource} : undefined}
+            };*/
+			
+			
+			
+			
         navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
 			
+			window.stream = stream;
+			debug.append('streaming<br>');
 			console.log( "streaming" )
 			
-			/*
+			var audioTracks = stream.getAudioTracks();
+			
+			debug.append( 'Got stream with constraints: => ' + JSON.stringify( constraints) + '<br>' );
+    		console.log('Got stream with constraints:', constraints);
+			
+			debug.append( 'Selected video device => ' + audioSource + '<br>' );
+    		console.log('Selected video device: ' + audioSource);
+			
+			debug.append( 'Using video device => ' + audioTracks[0].label + '<br>' );
+			console.log('Using video device: ' + audioTracks[0].label);
+			
+			context_samplerate = $('#select_samplerate').val();
+			
+			
 			context = new AudioContext({
-				latencyHint: 'interactive',
-				sampleRate: 44100
+               sampleRate: context_samplerate,
+               //latencyHint: 'interactive'
 			});
+			
+			debug.append( '----------------------------------<br>' );
+			
+			
 			var audioInput = context.createMediaStreamSource(stream);
 			context.audioWorklet.addModule('js/worklet.js').then(() => {
 				
 			  	let recorder = new AudioWorkletNode(context, 'port-processor');
 				
+				console.log( recorder ); //sampleRate + state
+				
+				debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + '</br>' );
+				var tcid = makeid(5);
+				debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
+				
 				recorder.port.onmessage = (event) => {
 					// Handling data from the processor.
-					console.log( event.data.data );
+					//console.log( event.data.data );
+					
+					$('#'+tcid).html( recorder.context.currentTime );
+								 
+					if( event.data.data[0] != 0 ){ // si y a pas rien dans le tuyau
+						var array = convertFloat32ToInt16( event.data.data );
+						var data = {
+							socket_id: socket_id,
+							sampleRate: context_samplerate,
+							bufferSize:0,
+							stream: array
+						};
+						socket.emit( 'binaryData', data );
+					}
 				};
 
 			  recorder.port.postMessage('Hello!');
-			  audioInput.connect(recorder).connect(context.destination)	
+			  audioInput.connect(recorder).connect(context.destination);
+				
 			});
-			*/
-			context_samplerate = $('#select_samplerate').val();
-			console.log( context_samplerate  );
+			
 
-           context = new AudioContext({
-               sampleRate: context_samplerate,
-               //latencyHint: 'interactive'
-           });
-
-			console.log(context);
-
-            var audioInput = context.createMediaStreamSource(stream);
+			/*
+			var audioInput = context.createMediaStreamSource(stream);
             var bufferSize = 0;
 
             recorder = context.createScriptProcessor(bufferSize, 1, 1); // <-- createScriptProcessor obsolete cf. https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createScriptProcessor
 
+			$('#select_buffersize').val( recorder.bufferSize );
+			
             recorder.onaudioprocess = function(e){
                 var left = e.inputBuffer.getChannelData(0);
-
-                var array = convertFloat32ToInt16( left );
-                var data = {
-                    socket_id: socket_id,
-                    sampleRate: context_samplerate,
-                    bufferSize:bufferSize,
-                    stream: array
-                };
 				
-                socket.emit( 'binaryData', data );
+				if( left[0] != 0 ){ // si y a pas rien dans le tuyau
+					var array = convertFloat32ToInt16( left );
+					var data = {
+						socket_id: socket_id,
+						sampleRate: context_samplerate,
+						bufferSize:bufferSize,
+						stream: array
+					};
+					socket.emit( 'binaryData', data );
+				} else {
+					return false;
+					//console.log( 'input buffer vide' );
+				}
+				
+				
+                
             };
 
             audioInput.connect(recorder);
             recorder.connect(context.destination);
-
-
+			*/
+			
         }).catch(function(err) {
 
         });
@@ -157,17 +214,8 @@ $( document ).ready(function() {
 
 
     }
-	
-		  
-    function onAudio(e) {
-        var left = e.inputBuffer.getChannelData(0);
+  
 
-        worker.postMessage({cmd: "resample", buffer: left});
-
-       //drawBuffer(left);
-    }
-		  
-    
 	function convertFloat32ToInt16(buffer) {
         var l = buffer.length;
         var buf = new Int16Array(l);
@@ -190,7 +238,7 @@ $( document ).ready(function() {
               .catch(err => {throw err})
           )
           .then(devices => {
-            device_list = devices;
+            //device_list = devices;
 
             //lister les blocks sur scene
              $('.block .select').each(function( index ) {
@@ -218,9 +266,11 @@ $( document ).ready(function() {
                          added.value = device.label;
                          added.innerHTML = device.label;
                          select.append(added);
+						 
+						 device_list.push( device );
                      }	
                  });
-
+				 select.dataset.socketid = $( this ).parent().find('.socket_id').text();
                  btplay.dataset.socketid = $( this ).parent().find('.socket_id').text();
                  btstop.dataset.socketid = $( this ).parent().find('.socket_id').text();
 
@@ -252,6 +302,8 @@ $( document ).ready(function() {
                      close( btstop.dataset.socketid );
                  })
             });
+			device_list = [...new Set(device_list)];
+			console.log( device_list );
 
           })
           .catch(err => console.error(err));			  
@@ -313,3 +365,12 @@ $( document ).ready(function() {
 		  
 		  });
 
+function makeid(length) {
+   var result           = '';
+   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+   var charactersLength = characters.length;
+   for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+   }
+   return result;
+}
