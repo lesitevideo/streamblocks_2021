@@ -20,15 +20,18 @@ socket.on('connect', function(){
 });
 
 socket.on('binaryData', function( data ){
-	
+
 	process.stdout.write( data.stream );
 	
 });
 
 socket.on('stop stream', function ( id ){
-
+	
+	process.stdout.write( '' );
+	
 });
 
 socket.on('disconnect', function(){
 	console.log('disconnected');
 });
+
