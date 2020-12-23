@@ -1,29 +1,8 @@
-/*
-class PortProcessor extends AudioWorkletProcessor {
-  constructor() {
-    super();
-    this.port.onmessage = (event) => {
-      // Handling data from the node.
-      console.log(event.data);
-    };
-
-    this.port.postMessage('Hi!');
-  }
-
-  process(inputs, outputs, parameters) {
-    // Do nothing, producing silent output.
-    return true;
-  }
-}
-
-registerProcessor('port-processor', PortProcessor);
-*/
-
 class PortProcessor extends AudioWorkletProcessor {
 	
     constructor() {
       super();
-      this._lastUpdate = currentTime;
+      //this._lastUpdate = currentTime;
       this.port.onmessage = this.handleMessage_.bind(this);
     }
 	
@@ -43,11 +22,11 @@ class PortProcessor extends AudioWorkletProcessor {
 		//console.log( inputs[0][0] );
 		
 		this.port.postMessage({
-		  message: '1 second passed.',
-		  contextTimestamp: currentTime,
+		  //message: '1 second passed.',
+		  //contextTimestamp: currentTime,
 		  data:inputs[0][0]	
 		});
-		this._lastUpdate = currentTime;		
+		//this._lastUpdate = currentTime;		
 
 		return true
     }

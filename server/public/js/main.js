@@ -24,17 +24,18 @@ $( document ).ready(function() {
 
     socket.on('connect', function(){
         console.log('connected to socket');
-        //socket.emit('get status', '');
+		debug.append('connected to socket server<br>');
     });
 
     socket.on('blocks status', function(data){
         console.log('blocks status => ', data);
-
-       $('#scene').html('');
-
+		debug.append('blocks status => ' + JSON.stringify( data ) + '<br>');
+		
+		$('#scene').html('');
+		
         data.forEach(function(item){
             $('#scene').append( $('#block_template').html() );
-            $('#scene').find( "h3" ).text( 'Block ' + item.block_id  );
+            $('#scene').find( "h3" ).text( item.block_id  );
             $('#scene').find( ".socket_id" ).text( item.socket_id  );  
 
         });
