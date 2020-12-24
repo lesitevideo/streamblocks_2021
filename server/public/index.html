@@ -19,7 +19,7 @@
 			  margin-bottom: 25px;
 			  padding: 20px 25px;
 			  background-color: #535353;
-			  border-radius: 20px;
+			  border-radius: 3px;
 			  color: white;
 			  font-size:12px;
 			  line-height: 16px;
@@ -61,6 +61,25 @@
 		  .btn{
 			  margin-right: 10px;
 		  }
+		  
+		  .card.settings{
+			  padding: 0px 10px;
+			  border:none;
+			  background-color: #fff;
+			  font-size: 12px;
+		  }
+		  
+		  .card.settings select{
+			  margin-bottom: 5px;
+		  }
+		  .card.settings .pouet{
+			  display: inline-flex;
+			  margin-left: 15px;
+			  align-items: center;
+		  }
+		  .card.settings .pouet label{
+			  margin-right: 5px;
+		  }
 	  </style>
   </head>
   <body>
@@ -69,15 +88,13 @@
       
       <div class="container">
 		  <div class="row">
-			  <div class="col-sm-12 text-center" style="margin-top:25px;">
-				  <h2>Ma scene</h2>
-			  </div>
+			  
 			  <div class="col-sm-12 text-center" style="margin-top:25px; padding:0px;">
-				  <div class="card" style="padding: 0px 15px; border:none;background-color: #fff;border-radius: 20px;">
+				  <div class="card settings">
 					  <div class="card-body row">
 						  <div class="col-8">
 							  
-							  <div class="row">
+							  <div class="row" style="margin: 0;">
 								  <div class="col-12 text-left">
 									  <label>Samplerate: </label>
 									  <select id="select_samplerate" class="form-select" aria-label="Default select example">
@@ -86,7 +103,6 @@
 									  </select>
 									  &nbsp;
 									  <label>Buffersize (auto): </label>
-									  
 									  <select id="select_buffersize" class="form-select" disabled aria-label="Default select example">
 										  <option value="0" disabled selected>Buffersize</option>
 										  <option value="512">512</option>
@@ -95,17 +111,22 @@
 										  <option value="4096">4096</option>
 										  <option value="8192">8192</option>
 									  </select>
+									  
+									  
+									  <div class="pouet">
+									  <label class="" for="checkbox_autoGainControl">autoGainControl</label>
+									  <input class="" type="checkbox" value="" id="checkbox_autoGainControl">
+									  </div>	
+									  
+									  <div class="pouet">
+									  <label class="" for="checkbox_echoCancellation">echoCancellation</label>
+									  <input class="" type="checkbox" value="" id="checkbox_echoCancellation">
+									  </div>
 								  </div>	  
 							  </div>
-							  <div class="row">
+							  <div class="row" style="margin: 0;">
 								  <div class="col-12 text-left"">
-									  <label for="checkbox_autoGainControl">autoGainControl</label>
-									  <input type="checkbox" value="" id="checkbox_autoGainControl">
-
-
-									  &nbsp;
-									  <label for="checkbox_echoCancellation">echoCancellation</label>
-									  <input type="checkbox" value="" id="checkbox_echoCancellation">
+									 
 								  </div>
                               </div>
 							  
@@ -119,6 +140,7 @@
 				  </div>
 			  </div>
 		  </div>
+		  																								
           <div class="row" id="scene">
           </div>
 									 
