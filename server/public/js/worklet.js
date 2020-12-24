@@ -28,7 +28,7 @@ class PortProcessor extends AudioWorkletProcessor {
 		const inputDevice = parameters.inputDevice;
 		const deviceChannel = parameters.deviceChannel;
 		
-		console.log( "device #" + inputDevice + " - channel #" + deviceChannel );
+		//console.log( "device #" + inputDevice + " - channel #" + deviceChannel );
 		//console.log( inputs );
 		/*
 		for (var channel = 0; channel < input.length; ++channel) {
@@ -48,17 +48,7 @@ class PortProcessor extends AudioWorkletProcessor {
 		
         return true
     }
-	/*  
-	handleMessage_(event) {
-		// Do something with data from main thread.
-		//var dataForMainThread = {};
-
-		// Send data to the main thread.
-		//this.postMessage('');
-		
-		//console.log('[Processor:Received] ' + event.data.message + ' (' + event.data.contextTimestamp + ')');
-	}
-	*/
+	
 }
 
 registerProcessor('port-processor', PortProcessor);
