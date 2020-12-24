@@ -185,7 +185,8 @@ $( document ).ready(function() {
 						var data = {
 							socket_id: socket_id,
 							sampleRate: context_samplerate,
-							bufferSize:0,
+							bufferSize:buffersize,
+							latency: recorder.context.baseLatency,
 							stream: array
 						};
 						socket.emit( 'binaryData', data );
