@@ -15,9 +15,10 @@ $( document ).ready(function() {
 
     var client,
         recorder,
-        context,
-        bStream;
+        context;
 
+	var blocksOnStage = [];
+	
 	var debug = $('#debug');
 	
 	/*------ SOCKET -------*/
@@ -32,12 +33,16 @@ $( document ).ready(function() {
 		debug.append('blocks status => ' + JSON.stringify( data ) + '<br>');
 		
 		$('#scene').html('');
+		blocksOnStage = [];
 		
         data.forEach(function(item){
             $('#scene').append( $('#block_template').html() );
             $('#scene').find( "h3" ).text( item.block_id  );
             $('#scene').find( ".socket_id" ).text( item.socket_id  );  
-
+			blocksOnStage.push({
+				block_id: item.block_id,
+				socket_id: item.socket_id
+			});
         });
         set_blocks_inputsources();
     });
@@ -89,7 +94,6 @@ $( document ).ready(function() {
         }
 		
 		
-		
         var constraints = {
 			audio: {
 				sampleSize: 16,
@@ -97,7 +101,7 @@ $( document ).ready(function() {
 				autoGainControl: autoGainControl,
 				echoCancellation: echoCancellation,
 				deviceId: audioSource,
-				latency: 0.002902,
+				//latency: 0.005333333333333333
 			},
 			video: false
 		};
@@ -144,22 +148,31 @@ $( document ).ready(function() {
 				
 			  	let recorder = new AudioWorkletNode(context, 'port-processor');
 				
-				//console.log( recorder ); //sampleRate + state
+				console.log( device_list );
 				
-				debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + '</br>' );
-				$('#select_buffersize').val( recorder.bufferSize );
+				var buffersize = recorder.context.baseLatency * recorder.context.sampleRate * 2;
+				
+				const inputDevice = recorder.parameters.get('inputDevice');
+				const deviceChannel = recorder.parameters.get('deviceChannel');
+				
+				//inputDevice.setValueAtTime( 0, recorder.context.currentTime + 1 );
+				//deviceChannel.setValueAtTime( 0, recorder.context.currentTime + 1 );
+				
+				$('#select_buffersize').val( buffersize );
+				
+				debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + ', buffersize ' + buffersize + '</br>' );
+				//
 				
 				var tcid = makeid(5);
 				debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
 				
 				recorder.port.onmessage = (event) => {
 					// Handling data from the processor.
-					//console.log( event.data.data );
 					
 					$('#'+tcid).html( recorder.context.currentTime );
 								 
-					if( event.data.data[0] != 0 ){ // si y a pas rien dans le tuyau
-						var array = convertFloat32ToInt16( event.data.data );
+					//if( event.data.bufferstream[0] != 0 ){ // si y a pas rien dans le tuyau
+						var array = convertFloat32ToInt16( event.data.bufferstream );
 						var data = {
 							socket_id: socket_id,
 							sampleRate: context_samplerate,
@@ -167,47 +180,12 @@ $( document ).ready(function() {
 							stream: array
 						};
 						socket.emit( 'binaryData', data );
-					}
+					//}
 				};
 
-			  recorder.port.postMessage('Hello!');
-			  audioInput.connect(recorder).connect(context.destination);
+			  audioInput.connect(recorder);//.connect(context.destination);
 				
 			});
-			
-
-			/*
-			var audioInput = context.createMediaStreamSource(stream);
-            var bufferSize = 0;
-
-            recorder = context.createScriptProcessor(bufferSize, 1, 1); // <-- createScriptProcessor obsolete cf. https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createScriptProcessor
-
-			$('#select_buffersize').val( recorder.bufferSize );
-			
-            recorder.onaudioprocess = function(e){
-                var left = e.inputBuffer.getChannelData(0);
-				
-				if( left[0] != 0 ){ // si y a pas rien dans le tuyau
-					var array = convertFloat32ToInt16( left );
-					var data = {
-						socket_id: socket_id,
-						sampleRate: context_samplerate,
-						bufferSize:bufferSize,
-						stream: array
-					};
-					socket.emit( 'binaryData', data );
-				} else {
-					return false;
-					//console.log( 'input buffer vide' );
-				}
-				
-				
-                
-            };
-
-            audioInput.connect(recorder);
-            recorder.connect(context.destination);
-			*/
 			
         }).catch(function(err) {
 
@@ -240,7 +218,7 @@ $( document ).ready(function() {
               .catch(err => {throw err})
           )
           .then(devices => {
-            //device_list = devices;
+            device_list = [];
 
             //lister les blocks sur scene
              $('.block .select').each(function( index ) {
@@ -265,7 +243,7 @@ $( document ).ready(function() {
                      if( device.kind == 'audioinput'  ){
                          //console.log(device.kind + ": " + device.label + " id = " + device.deviceId);
                          var added = document.createElement('option');
-                         added.value = device.label;
+                         added.value = device.deviceId;
                          added.innerHTML = device.label;
                          select.append(added);
 						 

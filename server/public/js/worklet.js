@@ -1,36 +1,54 @@
 class PortProcessor extends AudioWorkletProcessor {
 	
-    constructor() {
-      super();
-      //this._lastUpdate = currentTime;
-      this.port.onmessage = this.handleMessage_.bind(this);
+	static get parameterDescriptors() {
+      return [
+		  {
+			  name: 'inputDevice', // 10 entrées son max
+			  defaultValue: 0,
+			  minValue: 0,
+			  maxValue: 9
+		  },{
+			  name: 'deviceChannel', // 16 voies max par entrée son
+			  defaultValue: 0,
+			  minValue: 0,
+			  maxValue: 15
+		  }
+	  ];
+    }
+	
+    constructor( options ) {
+		super( options );
     }
 	
 	process(inputs, outputs, parameters) {
-		const input = inputs[0];
+		
+		const input = inputs[0]; // <- ici passer l'input
 		const output = outputs[0];
-	
+		
+		const inputDevice = parameters.inputDevice;
+		const deviceChannel = parameters.deviceChannel;
+		
+		//console.log( "device #" + inputDevice + " - channel #" + deviceChannel );
+		//console.log( inputs );
+		/*
 		for (var channel = 0; channel < input.length; ++channel) {
 			const inputChannel = input[channel];
 			const outputChannel = output[channel];
-		 
+		 	
 			for (var i = 0; i < inputChannel.length; ++i){
 				outputChannel[i] = inputChannel[i];
+				
 			}
 		}
+		*/
 		
-		//console.log( inputs[0][0] );
+        this.port.postMessage({
+          bufferstream:inputs[inputDevice][deviceChannel]	 // <- ici passer la voie
+        });
 		
-		this.port.postMessage({
-		  //message: '1 second passed.',
-		  //contextTimestamp: currentTime,
-		  data:inputs[0][0]	
-		});
-		//this._lastUpdate = currentTime;		
-
-		return true
+        return true
     }
-	  
+	/*  
 	handleMessage_(event) {
 		// Do something with data from main thread.
 		//var dataForMainThread = {};
@@ -40,7 +58,7 @@ class PortProcessor extends AudioWorkletProcessor {
 		
 		//console.log('[Processor:Received] ' + event.data.message + ' (' + event.data.contextTimestamp + ')');
 	}
-	
+	*/
 }
 
 registerProcessor('port-processor', PortProcessor);
