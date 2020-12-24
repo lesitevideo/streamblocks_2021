@@ -55,7 +55,7 @@ $( document ).ready(function() {
         set_blocks_inputsources();
     });
 
-
+	
 
 
 	/*------ BOUTONS interface -------*/
@@ -90,6 +90,8 @@ $( document ).ready(function() {
 			
     function stream_to_block( socket_id ){
 
+		socket.emit('stop stream', '');
+		
 		var autoGainControl = $('#checkbox_autoGainControl').is(':checked');
 		var echoCancellation = $('#checkbox_echoCancellation').is(':checked');
 		var audioSource = $('#select0').val();  
@@ -108,38 +110,29 @@ $( document ).ready(function() {
 				channelCount: 1,
 				autoGainControl: autoGainControl,
 				echoCancellation: echoCancellation,
-				deviceId: audioSource,
-				//latency: 0.005333333333333333
+				deviceId: audioSource
 			},
 			video: false
 		};
 		debug.append( 'constraints => ' + JSON.stringify( constraints) + '<br>' );
-		console.log( constraints );
-        //close();
-		
-            /*const constraints = {
-              audio: {deviceId: audioSource ? {exact: audioSource} : undefined}
-            };*/
-			
-			
-			
+		//console.log( constraints );
 			
         navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
 			
 			window.stream = stream;
 			debug.append('streaming<br>');
-			console.log( "streaming" )
+			//console.log( "streaming" )
 			
 			var audioTracks = stream.getAudioTracks();
 			
 			debug.append( 'Got stream with constraints: => ' + JSON.stringify( constraints) + '<br>' );
-    		console.log('Got stream with constraints:', constraints);
+    		//console.log('Got stream with constraints:', constraints);
 			
 			debug.append( 'Selected audio device => ' + audioSource + '<br>' );
-    		console.log('Selected audio device: ' + audioSource);
+    		//console.log('Selected audio device: ' + audioSource);
 			
 			debug.append( 'Using audio device => ' + audioTracks[0].label + '<br>' );
-			console.log('Using audio device: ' + audioTracks[0].label);
+			//console.log('Using audio device: ' + audioTracks[0].label);
 			
 			context_samplerate = $('#select_samplerate').val();
 			
