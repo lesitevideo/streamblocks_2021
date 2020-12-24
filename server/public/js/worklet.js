@@ -28,7 +28,7 @@ class PortProcessor extends AudioWorkletProcessor {
 		const inputDevice = parameters.inputDevice;
 		const deviceChannel = parameters.deviceChannel;
 		
-		//console.log( "device #" + inputDevice + " - channel #" + deviceChannel );
+		console.log( "device #" + inputDevice + " - channel #" + deviceChannel );
 		//console.log( inputs );
 		/*
 		for (var channel = 0; channel < input.length; ++channel) {

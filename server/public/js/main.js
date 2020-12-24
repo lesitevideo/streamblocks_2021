@@ -21,6 +21,14 @@ $( document ).ready(function() {
 	
 	var debug = $('#debug');
 	
+    var origAppend = $.fn.append;
+
+    $.fn.append = function () {
+        return origAppend.apply(this, arguments).trigger("append");
+    };
+	
+	debug.bind("append", function() { debug.scrollTop(debug[0].scrollHeight); });
+	
 	/*------ SOCKET -------*/
 
     socket.on('connect', function(){
@@ -127,11 +135,11 @@ $( document ).ready(function() {
 			debug.append( 'Got stream with constraints: => ' + JSON.stringify( constraints) + '<br>' );
     		console.log('Got stream with constraints:', constraints);
 			
-			debug.append( 'Selected video device => ' + audioSource + '<br>' );
-    		console.log('Selected video device: ' + audioSource);
+			debug.append( 'Selected audio device => ' + audioSource + '<br>' );
+    		console.log('Selected audio device: ' + audioSource);
 			
-			debug.append( 'Using video device => ' + audioTracks[0].label + '<br>' );
-			console.log('Using video device: ' + audioTracks[0].label);
+			debug.append( 'Using audio device => ' + audioTracks[0].label + '<br>' );
+			console.log('Using audio device: ' + audioTracks[0].label);
 			
 			context_samplerate = $('#select_samplerate').val();
 			
@@ -152,16 +160,17 @@ $( document ).ready(function() {
 				
 				var buffersize = recorder.context.baseLatency * recorder.context.sampleRate * 2;
 				
-				const inputDevice = recorder.parameters.get('inputDevice');
+				//const inputDevice = recorder.parameters.get('inputDevice');
 				const deviceChannel = recorder.parameters.get('deviceChannel');
 				
 				//inputDevice.setValueAtTime( 0, recorder.context.currentTime + 1 );
-				//deviceChannel.setValueAtTime( 0, recorder.context.currentTime + 1 );
+				
+				// selectionner la bonne voie
+				deviceChannel.setValueAtTime( 0, recorder.context.currentTime  );
 				
 				$('#select_buffersize').val( buffersize );
 				
 				debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + ', buffersize ' + buffersize + '</br>' );
-				//
 				
 				var tcid = makeid(5);
 				debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
@@ -344,6 +353,12 @@ $( document ).ready(function() {
 		  
 		  
 		  });
+
+
+
+
+
+
 
 function makeid(length) {
    var result           = '';
