@@ -3,6 +3,7 @@ const express = require('express');
 const fs = require('fs');
 const app = express();
 
+/*
 // Certificate
 const privateKey = fs.readFileSync('ssl/localhost.key', 'utf8');
 const certificate = fs.readFileSync('ssl/localhost.crt', 'utf8');
@@ -13,6 +14,7 @@ const credentials = {
 	cert: certificate,
 	//ca: ca
 };
+*/
 
 var http = require('http').Server( app );
 var io = require('socket.io')(http, { wsEngine: 'ws' });
@@ -80,9 +82,11 @@ io.on('connection', function (socket) {
 		socket.emit('blocks status', connected_blocks);
     });
 	
-	socket.on('stderr', function ( stderr ){
-		console.log( stderr );
+	/*
+	socket.on('set args', function ( data ){
+		io.to( data.socket_id ).emit( 'data', data );
     });
+	*/
 	
 	socket.on('binaryData', function ( binaryData ){
 		//console.log( 'send binaryData ');
