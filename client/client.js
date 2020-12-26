@@ -56,12 +56,13 @@ socket.on('set args', function( args ){
 });
 
 socket.on('binaryData', function( data ){
-	
+	//console.log( data );
 	if( is_spawned ){
 		child.stdin.write( data.stream );
+		
 	} else {
 		args= [
-			'-f','S16_LE',
+			'-f',data.sampleformat,
 			'-c1',
 			'-r', data.sampleRate,
 			'-B', parseInt( data.latency * 1000000 ) //<- seconds to microsecondes
@@ -82,9 +83,9 @@ socket.on('stop stream', function ( id ){
 function span_childprocess(){
 	child = child_process.spawn( "aplay", args );
 	child.stderr.on('data',function(data) {
-		process.stdout.setEncoding('utf8');
-		process.stdout.write('Debug => '+ String( data));
+		process.stdout.write('Debug => '+ String( data) + '\n');
 	});
+	process.stdout.write('aplay args => '+ args + '\n');
 	is_spawned = true;
 }
 
