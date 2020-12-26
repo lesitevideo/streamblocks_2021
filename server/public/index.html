@@ -80,6 +80,12 @@
 		  .card.settings .pouet label{
 			  margin-right: 5px;
 		  }
+		  .card.settings .pouet input{
+			  margin-right: 5px;
+			  padding-right: 5px;
+			  border-right: 1px solid #cecece;
+			  
+		  }
 	  </style>
   </head>
   <body>
@@ -98,6 +104,10 @@
 								  <div class="col-12 text-left">
 									  <label>Samplerate: </label>
 									  <select id="select_samplerate" class="form-select" aria-label="Default select example">
+										  <option value="8000">8000</option>
+										  <option value="11025">11025</option>
+										  <option value="22050">22050</option>
+										  <option value="32000">32000</option>
 										  <option value="44100">44100</option>
 										  <option selected value="48000">48000</option>
 									  </select>
@@ -112,16 +122,103 @@
 										  <option value="8192">8192</option>
 									  </select>
 									  
+									  <br>
 									  
-									  <div class="pouet">
+									  
+									  <div class="pouet sampleformat" style="margin-left: 0px; margin: 15px 0px">
+										  <div style="width: 120px; display: inline-flex;">Sample format:</div>
+									    <div style="width: 100%;">
+										    <label>S8</label><input type="radio" name="sampleformat" value="S8">
+										    
+											<label>U8</label><input type="radio" name="sampleformat" value="U8">
+										    
+										    <label>S16_LE</label><input type="radio" name="sampleformat" value="S16_LE" checked="checked">
+										    
+											<label>S16_BE</label><input type="radio" name="sampleformat" value="S16_BE">
+										    
+											<label>U16_LE</label><input type="radio" name="sampleformat" value="U16_LE">
+										    
+											<label>U16_BE</label><input type="radio" name="sampleformat" value="U16_BE">
+										   
+											<label>S24_LE</label><input type="radio" name="sampleformat" value="S24_LE">
+											
+											<label>S24_BE</label><input type="radio" name="sampleformat" value="S24_BE">
+										  
+											<label>U24_LE</label><input type="radio" name="sampleformat" value="U24_LE">
+										   
+											<label>U24_BE</label><input type="radio" name="sampleformat" value="U24_BE">
+										  
+											<label>S32_LE</label><input type="radio" name="sampleformat" value="S32_LE">
+											
+											<label>S32_BE</label><input type="radio" name="sampleformat" value="S32_BE">
+											
+											<label>U32_LE</label><input type="radio" name="sampleformat" value="U32_LE">
+											
+											<label>U32_BE</label><input type="radio" name="sampleformat" value="U32_BE">
+											
+											<label>FLOAT_LE</label><input type="radio" name="sampleformat" value="FLOAT_LE">
+											<label>FLOAT_BE</label><input type="radio" name="sampleformat" value="FLOAT_BE">
+											<label>FLOAT64_LE</label><input type="radio" name="sampleformat" value="FLOAT64_LE">
+											<label>FLOAT64_BE</label><input type="radio" name="sampleformat" value="FLOAT64_BE">
+											<label>MU_LAW</label><input type="radio" name="sampleformat" value="MU_LAW">
+											<label>A_LAW</label><input type="radio" name="sampleformat" value="A_LAW">
+										    </div>
+											
+									    
+									  <!--S8
+									  U8
+									  S16_LE
+									  S16_BE
+									  U16_LE
+									  U16_BE
+									  S24_LE
+									  S24_BE
+									  U24_LE
+									  U24_BE
+									  S32_LE
+									  S32_BE
+									  U32_LE
+									  U32_BE
+									  FLOAT_LE
+									  FLOAT_BE
+									  FLOAT64_LE
+									  FLOAT64_BE
+									  IEC958_SUBFRAME_LE
+									  IEC958_SUBFRAME_BE
+									  MU_LAW
+									  A_LAW
+									  IMA_ADPCM
+									  MPEG
+									  GSM
+									  SPECIAL
+									  S24_3LE
+									  S24_3BE
+									  U24_3LE
+									  U24_3BE
+									  S20_3LE
+									  S20_3BE
+									  U20_3LE
+									  U20_3BE
+									  S18_3LE
+									  S18_3BE
+									  U18_3LE--> </div>
+									  
+									  
+								    <div class="pouet" style="margin-left: 0px;">
 									  <label class="" for="checkbox_autoGainControl">autoGainControl</label>
 									  <input class="" type="checkbox" value="" id="checkbox_autoGainControl">
 									  </div>	
 									  
 									  <div class="pouet">
 									  <label class="" for="checkbox_echoCancellation">echoCancellation</label>
-									  <input class="" type="checkbox" value="" id="checkbox_echoCancellation">
+									  <input type="checkbox" class="" id="checkbox_echoCancellation" value="" checked="checked">
 									  </div>
+									  
+									  <div class="pouet">
+									  <label class="" for="checkbox_ringbuffer">ring buffer</label>
+									  <input class="" type="checkbox" value="" id="checkbox_ringbuffer">
+									  </div>
+									  
 								  </div>	  
 							  </div>
 							  <div class="row" style="margin: 0;">

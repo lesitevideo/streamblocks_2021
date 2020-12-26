@@ -4,7 +4,7 @@ const fs = require('fs');
 const app = express();
 
 /*
-// Certificate
+// Certificat
 const privateKey = fs.readFileSync('ssl/localhost.key', 'utf8');
 const certificate = fs.readFileSync('ssl/localhost.crt', 'utf8');
 //const ca = fs.readFileSync('ssl/kinoki.cer', 'utf8');

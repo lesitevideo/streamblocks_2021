@@ -20,10 +20,10 @@ class PortProcessor extends AudioWorkletProcessor {
 		super( options );
     }
 	
-	process(inputs, outputs, parameters) {
+	process( inputs, outputs, parameters ) {
 		
-		const input = inputs[0]; // <- ici passer l'input
-		const output = outputs[0];
+		//const input = inputs[0];
+		//const output = outputs[0];
 		
 		const inputDevice = parameters.inputDevice;
 		const deviceChannel = parameters.deviceChannel;
@@ -43,7 +43,7 @@ class PortProcessor extends AudioWorkletProcessor {
 		*/
 		
         this.port.postMessage({
-          bufferstream:inputs[inputDevice][deviceChannel]	 // <- ici passer la voie
+          bufferstream:inputs[inputDevice][deviceChannel]	 // <- ici selectionner l'input et la voie
         });
 		
         return true

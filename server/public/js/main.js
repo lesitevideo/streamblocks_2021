@@ -1,7 +1,8 @@
 $( document ).ready(function() {
 		
 	var context_samplerate;
-	
+	var method = '';
+	var debuginterval;
 	var recorder;	
 	
     var socket = io();
@@ -13,6 +14,9 @@ $( document ).ready(function() {
         audio:true
     };
 
+	var sampleformat = $('.sampleformat input:checked').val();
+	console.log(sampleformat);
+	
     var client,
         recorder,
         context;
@@ -82,6 +86,10 @@ $( document ).ready(function() {
 		if(context){
             context.close();
         }
+		if(debuginterval){
+           clearInterval(debuginterval);
+        }
+		
 		$('#select_buffersize').val( 0 );
         socket.emit( 'stop stream', '' );
     }
@@ -116,89 +124,187 @@ $( document ).ready(function() {
 		};
 		debug.append( 'constraints => ' + JSON.stringify( constraints) + '<br>' );
 		//console.log( constraints );
+		context_samplerate = $('#select_samplerate').val();
 			
-        navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
-			
-			window.stream = stream;
-			debug.append('streaming<br>');
-			//console.log( "streaming" )
-			
-			var audioTracks = stream.getAudioTracks();
-			
-			debug.append( 'Got stream with constraints: => ' + JSON.stringify( constraints) + '<br>' );
-    		//console.log('Got stream with constraints:', constraints);
-			
-			debug.append( 'Selected audio device => ' + audioSource + '<br>' );
-    		//console.log('Selected audio device: ' + audioSource);
-			
-			debug.append( 'Using audio device => ' + audioTracks[0].label + '<br>' );
-			//console.log('Using audio device: ' + audioTracks[0].label);
-			
-			context_samplerate = $('#select_samplerate').val();
-			
-			
-			context = new AudioContext({
-               sampleRate: context_samplerate
-			});
-			
-			debug.append( '----------------------------------<br>' );
-			
-			
-			var audioInput = context.createMediaStreamSource(stream);
-			context.audioWorklet.addModule('js/worklet.js').then(() => {
-				
-			  	let recorder = new AudioWorkletNode(context, 'port-processor');
-				
-				console.log( device_list );
-				
-				var buffersize = recorder.context.baseLatency * recorder.context.sampleRate * 2;
-				
-				//const inputDevice = recorder.parameters.get('inputDevice');
-				const deviceChannel = recorder.parameters.get('deviceChannel');
-				
-				//inputDevice.setValueAtTime( 0, recorder.context.currentTime + 1 );
-				
-				// selectionner la bonne voie
-				deviceChannel.setValueAtTime( 0, recorder.context.currentTime  );
-				
-				$('#select_buffersize').val( buffersize );
-				
-				debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + ', buffersize ' + buffersize + '</br>' );
-				
-				var tcid = makeid(5);
-				debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
-				
-				recorder.port.onmessage = (event) => {
-					// Handling data from the processor.
-					
-					$('#'+tcid).html( recorder.context.currentTime );
-								 
-					//if( event.data.bufferstream[0] != 0 ){ // si y a pas rien dans le tuyau
-						var array = convertFloat32ToInt16( event.data.bufferstream );
-						var data = {
-							socket_id: socket_id,
-							sampleRate: context_samplerate,
-							bufferSize:buffersize,
-							latency: recorder.context.baseLatency,
-							stream: array
-						};
-						socket.emit( 'binaryData', data );
-					//}
-				};
-
-			  audioInput.connect(recorder);//.connect(context.destination);
-				
-			});
-			
-        }).catch(function(err) {
-
+        context = new AudioContext({
+           sampleRate: context_samplerate
         });
-        
+		
+		sampleformat = $('.sampleformat input:checked').val();
+		console.log(sampleformat);
+		
+		var checkedmethod = $('#checkbox_ringbuffer').is(':checked');
+		if(checkedmethod){
+			method = "bufferRing";
+		} else {
+			method = "";
+		}
+		
+		if( method == "bufferRing" ){
+		
+			context.audioWorklet.addModule('js/worklet/microphone-worklet-processor.js').then(() => {
+			  navigator.mediaDevices.getUserMedia( constraints ).then(stream => {
+				  
+				window.stream = stream;
 
+				console.log("stream");
+				
+				debug.append('streaming<br>');
+				//console.log( "streaming" )
+
+				var audioTracks = stream.getAudioTracks();
+
+				debug.append( 'Got stream with constraints: => ' + JSON.stringify( constraints) + '<br>' );
+				//console.log('Got stream with constraints:', constraints);
+
+				debug.append( 'Selected audio device => ' + audioSource + '<br>' );
+				//console.log('Selected audio device: ' + audioSource);
+
+				debug.append( 'Using audio device => ' + audioTracks[0].label + '<br>' );
+				//console.log('Using audio device: ' + audioTracks[0].label);
+
+				
+
+				debug.append( '----------------------------------<br>' );				  
+				  
+
+				  const audioInput = context.createMediaStreamSource(stream);
+				  const recorder = new AudioWorkletNode(
+					context,
+					'microphone-worklet-processor',
+					{
+					  channelCount : 1,
+					  processorOptions: { //Passing the arguments to processor
+						bufferSize: 128, //output buffer size
+						capacity:2048 // max fifo capacity
+					  },
+					},
+				  );
+				  console.log( recorder );
+				  recorder.port.onmessage = ({ data }) => {
+					  //console.log('Your own buffer >> ', data); //Receiving data from worklet thread
+					  var buffersize = recorder.context.baseLatency * recorder.context.sampleRate * 2;
+					  
+					  // data => Uint8Array(128) et il faudrait un ArrayBuffer(256)
+					  
+					  
+					  var array = convertFloat32ToInt16( Float32Array.from(data) ); //Float32Array(128)
+					  
+					  var args = {
+						  socket_id: socket_id,
+						  sampleRate: recorder.context.sampleRate,
+						  bufferSize:buffersize,
+						  latency: recorder.context.baseLatency,
+						  sampleformat:sampleformat,
+						  stream: array 
+					  };
+					  socket.emit( 'binaryData', args );
+					  //console.log( args );
+				  };
+				  audioInput.connect(recorder).connect(context.destination);
+				});
+			});		
+		
+		} else {
+			
+			navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+				
+				window.stream = stream;
+
+				console.log("stream");
+				
+				debug.append('streaming<br>');
+				//console.log( "streaming" )
+
+				var audioTracks = stream.getAudioTracks();
+
+				debug.append( 'Got stream with constraints: => ' + JSON.stringify( constraints) + '<br>' );
+				//console.log('Got stream with constraints:', constraints);
+
+				debug.append( 'Selected audio device => ' + audioSource + '<br>' );
+				//console.log('Selected audio device: ' + audioSource);
+
+				debug.append( 'Using audio device => ' + audioTracks[0].label + '<br>' );
+				//console.log('Using audio device: ' + audioTracks[0].label);
+
+				
+
+				debug.append( '----------------------------------<br>' );
+
+
+				var audioInput = context.createMediaStreamSource(stream);
+				context.audioWorklet.addModule('js/worklet.js').then(() => {
+
+					let recorder = new AudioWorkletNode(context, 'port-processor');
+
+					console.log( device_list );
+
+					var buffersize = recorder.context.baseLatency * recorder.context.sampleRate * 2;
+
+					//const inputDevice = recorder.parameters.get('inputDevice');
+					const deviceChannel = recorder.parameters.get('deviceChannel');
+
+					//inputDevice.setValueAtTime( 0, recorder.context.currentTime + 1 );
+
+					// selectionner la bonne voie
+					deviceChannel.setValueAtTime( 0, recorder.context.currentTime  );
+
+					$('#select_buffersize').val( buffersize );
+
+					//debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + ', buffersize ' + buffersize + '</br>' );
+					
+					var tcid = makeid(5);
+
+					debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
+				
+					recorder.port.onmessage = (event) => {
+						
+						$('#'+tcid).html( '<span style="display:block; width:250px;">context time : ' + recorder.context.currentTime + '</span>' );
+						
+						//event.data.bufferstream = Float32Array(128);
+						
+                        var array = convertFloat32ToInt16( event.data.bufferstream ); // array = ArrayBuffer(256)
+
+                        var args = {
+                            socket_id: socket_id,
+                            sampleRate: context_samplerate,
+                            bufferSize:buffersize,
+                            latency: recorder.context.baseLatency,
+							sampleformat:sampleformat,
+                            stream: array
+                        };
+                        socket.emit( 'binaryData', args );
+                       // console.log( args );
+
+					};
+					
+					
+				  audioInput.connect(recorder);//.connect(context.destination);
+
+				});
+			
+				
+				
+				
+				
+			}).catch(function(err) {
+
+			});
+			
+		}
 
     }
   
-
+	function convertBlock(incomingData) { // incoming data is a UInt8Array
+		var i, l = incomingData.length;
+		var outputData = new Float32Array(incomingData.length);
+		for (i = 0; i < l; i++) {
+			outputData[i] = (incomingData[i] - 128) / 128.0;
+		}
+		return outputData;
+	}
+	
+	
 	function convertFloat32ToInt16(buffer) {
         var l = buffer.length;
         var buf = new Int16Array(l);
@@ -208,8 +314,6 @@ $( document ).ready(function() {
         return buf.buffer;
     }
 	
-	
-    
 	function set_blocks_inputsources(){
         navigator.mediaDevices.getUserMedia( rules )
           .then(stream => 
