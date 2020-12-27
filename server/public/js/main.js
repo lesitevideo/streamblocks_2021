@@ -1,5 +1,7 @@
+
+
 $( document ).ready(function() {
-		
+	
 	var context_samplerate;
 	var method = '';
 	var debuginterval;
@@ -146,47 +148,39 @@ $( document ).ready(function() {
 			  navigator.mediaDevices.getUserMedia( constraints ).then(stream => {
 				  
 				window.stream = stream;
-
-				console.log("stream");
-				
-				debug.append('streaming<br>');
-				//console.log( "streaming" )
-
 				var audioTracks = stream.getAudioTracks();
 
+				debug.append('streaming<br>');
 				debug.append( 'Got stream with constraints: => ' + JSON.stringify( constraints) + '<br>' );
-				//console.log('Got stream with constraints:', constraints);
-
 				debug.append( 'Selected audio device => ' + audioSource + '<br>' );
-				//console.log('Selected audio device: ' + audioSource);
-
 				debug.append( 'Using audio device => ' + audioTracks[0].label + '<br>' );
-				//console.log('Using audio device: ' + audioTracks[0].label);
-
-				
 
 				debug.append( '----------------------------------<br>' );				  
 				  
-
 				  const audioInput = context.createMediaStreamSource(stream);
 				  const recorder = new AudioWorkletNode(
 					context,
 					'microphone-worklet-processor',
 					{
 					  channelCount : 1,
-					  processorOptions: { //Passing the arguments to processor
+					  processorOptions: {
 						bufferSize: 128, //output buffer size
 						capacity:2048 // max fifo capacity
 					  },
 					},
 				  );
-				  console.log( recorder );
+				  var buffersize = recorder.context.baseLatency * recorder.context.sampleRate * 2;
+				  debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + ', buffersize ' + buffersize + '</br>' );
+				  var tcid = makeid(5);
+				  debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
+				  
 				  recorder.port.onmessage = ({ data }) => {
-					  //console.log('Your own buffer >> ', data); //Receiving data from worklet thread
-					  var buffersize = recorder.context.baseLatency * recorder.context.sampleRate * 2;
+					  $('#'+tcid).html( '<span style="display:block; width:250px;">context time : ' + recorder.context.currentTime + '</span>' );
+					  
+					  
+					  
 					  
 					  // data => Uint8Array(128) et il faudrait un ArrayBuffer(256)
-					  
 					  
 					  var array = convertFloat32ToInt16( Float32Array.from(data) ); //Float32Array(128)
 					  
@@ -251,10 +245,8 @@ $( document ).ready(function() {
 
 					$('#select_buffersize').val( buffersize );
 
-					//debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + ', buffersize ' + buffersize + '</br>' );
-					
+					debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + ', buffersize ' + buffersize + '</br>' );
 					var tcid = makeid(5);
-
 					debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
 				
 					recorder.port.onmessage = (event) => {
