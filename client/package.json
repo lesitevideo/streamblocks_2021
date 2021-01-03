@@ -2,14 +2,14 @@
   "name": "client",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "client.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "socket.io-client": "^3.0.4",
-    "stdout-stream": "^1.4.1"
+    "socket.io": "^3.0.4",
+    "socket.io-client": "^3.0.4"
   }
 }
