@@ -16,9 +16,9 @@
   * git clone https://github.com/lesitevideo/streamblocks_2021/
   * cd streamblocks_2021/client
   * npm install
-  * configurer variables dans client.js :
-    * ip serveur web => const macpro_ip = 'http://192.168.2.22:1664';
-    * ID du block => const BLOCK_ID = 23;
+  ~~* configurer variables dans client.js :~~
+  ~~* ip serveur web => const macpro_ip = 'http://192.168.2.22:1664';~~
+  ~~* ID du block => const BLOCK_ID = 23;~~
 
 * usage : node client.js
 
