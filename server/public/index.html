@@ -108,20 +108,32 @@
 										  <option value="11025">11025</option>
 										  <option value="22050">22050</option>
 										  <option value="32000">32000</option>
-										  <option value="44100">44100</option>
-										  <option selected value="48000">48000</option>
+										  <option selected value="44100">44100</option>
+										  <option value="48000">48000</option>
 									  </select>
 									  &nbsp;
 									  <label>Buffersize (auto): </label>
 									  <select id="select_buffersize" class="form-select" disabled aria-label="Default select example">
-										  <option value="0" disabled selected>Buffersize</option>
+										  <option value="512" disabled selected>Buffersize</option>
+										  <option value="128">128</option>
+										  <option value="256">256</option>
 										  <option value="512">512</option>
 										  <option value="1024">1024</option>
 										  <option value="2048">2048</option>
 										  <option value="4096">4096</option>
 										  <option value="8192">8192</option>
 									  </select>
-									  
+									  &nbsp;
+									  <label>Buffersize: </label>
+									  <select id="select_setbuffersize" class="form-select" aria-label="Default select example">
+										  <option value="128">128</option>
+										  <option value="256" selected>256</option>
+										  <option value="512">512</option>
+										  <option value="1024">1024</option>
+										  <option value="2048">2048</option>
+										  <option value="4096">4096</option>
+										  <option value="8192">8192</option>
+									  </select>
 									  <br>
 									  
 									  
@@ -216,13 +228,18 @@
 									  
 									  <div class="pouet">
 									  <label class="" for="checkbox_ringbuffer">ring buffer</label>
-									  <input class="" type="checkbox" value="" id="checkbox_ringbuffer">
+									  <input type="checkbox" class="" id="checkbox_ringbuffer" value="">
+									  </div>
+									  
+									  <div class="pouet">
+									  <label class="" for="checkbox_wavesurfer">wavesurfer.js</label>
+									  <input type="checkbox" class="" id="checkbox_wavesurfer" value="">
 									  </div>
 									  
 								  </div>	  
 							  </div>
 							  <div class="row" style="margin: 0;">
-								  <div class="col-12 text-left"">
+								  <div class="col-12 text-left">
 									 
 								  </div>
                               </div>
@@ -231,7 +248,7 @@
 							  
 						  </div>
 						  <div class="col-4">
-						  <button id="bt_refresh" type="button" class="btn-stop btn btn-primary float-right">Refresh scene</button>
+											<button id="bt_refresh" type="button" class="btn-stop btn btn-primary float-right">Refresh scene</button>
 						  </div>
 					  </div>
 				  </div>
@@ -269,6 +286,7 @@
 			<div class="select">
 				<label>Audio input source: </label>
 			</div>
+			<div id="waveform"></div>
         </div>
     </div>
 	  
@@ -279,6 +297,9 @@
 	  <script src="js/bootstrap.bundle.min.js"></script>
 	  
 	  <script src="/socket.io/socket.io.js"></script>
+	  <script src="wavesurfer.js-master/dist/wavesurfer.js"></script>
+	  <script src="wavesurfer.js-master/dist/plugin/wavesurfer.microphone.js"></script>	
+														
 	  <script src="js/main.js"></script>
 	  
 	  <script>

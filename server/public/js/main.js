@@ -1,6 +1,8 @@
-
-
+	
 $( document ).ready(function() {
+	
+	let wavesurfer;
+	var is_streaming = false;
 	
 	var context_samplerate;
 	var method = '';
@@ -21,7 +23,7 @@ $( document ).ready(function() {
 	
     var client,
         recorder,
-        context;
+        context, processor;
 
 	var blocksOnStage = [];
 	
@@ -78,29 +80,41 @@ $( document ).ready(function() {
 		  
 
 			  
-    function close(){ // <- todo : passer en variable le recorder à arreter ( et donc avant faire un array dynamique avec les recorders actifs )
-        console.log('close');
+    function close(){ // <- todo : passer en variable le recorder à arreter ( faire un array avec les recorders actifs )
+        //socket.emit( 'stop stream', '' );
+		console.log('close ');
 		debug.append('<b>close</b><br>');
+		
+		$('#select_buffersize').val( 0 );
+		
+        is_streaming = false;
 		
         if(recorder){
             recorder.disconnect();
         }
-		if(context){
+
+		if( context && context.state != "closed" ){
             context.close();
         }
+		
 		if(debuginterval){
            clearInterval(debuginterval);
         }
 		
-		$('#select_buffersize').val( 0 );
-        socket.emit( 'stop stream', '' );
+		if (wavesurfer) {
+			if (wavesurfer.microphone.active) {
+				wavesurfer.microphone.stop();
+			}
+		}
+		socket.emit( 'stop stream', '' );
     }
 		  
 	
 			
     function stream_to_block( socket_id ){
 
-		socket.emit('stop stream', '');
+		close();
+		//socket.emit('stop stream', '');
 		
 		var autoGainControl = $('#checkbox_autoGainControl').is(':checked');
 		var echoCancellation = $('#checkbox_echoCancellation').is(':checked');
@@ -113,6 +127,7 @@ $( document ).ready(function() {
           });
         }
 		
+		is_streaming = true;
 		
         var constraints = {
 			audio: {
@@ -136,79 +151,163 @@ $( document ).ready(function() {
 		console.log(sampleformat);
 		
 		var checkedmethod = $('#checkbox_ringbuffer').is(':checked');
-		if(checkedmethod){
+		
+		
+		if( $('#checkbox_ringbuffer').is(':checked') ){
 			method = "bufferRing";
+		} else if( $('#checkbox_wavesurfer').is(':checked') ){
+			method = "wavesurfer";
 		} else {
 			method = "";
 		}
+		/*------ WAVESURFER -------*/
+		if( method == "wavesurfer" ){
 		
-		if( method == "bufferRing" ){
-		
+			if( !wavesurfer ){
+				// Init wavesurfer
+				wavesurfer = WaveSurfer.create({
+					container: '#waveform',
+					waveColor: 'black',
+					interact: false,
+					cursorWidth: 0,
+					audioContext: context, //context || null,
+					audioScriptProcessor: processor || null,
+					plugins: [
+						WaveSurfer.microphone.create({
+							bufferSize: 512,
+							numberOfInputChannels: 1,
+							numberOfOutputChannels: 1,
+							constraints: constraints
+						})
+					]
+				});
+			}
+
+			var microphone;
+			var buffersize;
+
+			wavesurfer.microphone.on('deviceReady', function() {
+				console.info('Device ready!', wavesurfer);
+				microphone = wavesurfer.microphone;
+				buffersize = microphone.bufferSize;
+				console.log( microphone );
+			});
+
+			wavesurfer.microphone.on('deviceError', function(code) {
+				console.warn('Device error: ' + code);
+			});
+
+			wavesurfer.on('error', function(e) {
+				console.warn(e);
+			});
+
+			wavesurfer.microphone.reloadBuffer = function(event) {
+				if (!this.paused) {
+					this.wavesurfer.empty();
+					this.wavesurfer.loadDecodedBuffer(event.inputBuffer);
+
+					const interleaved = new Float32Array( event.inputBuffer.getChannelData(0).length );
+					for (let src=0, dst=0; src < event.inputBuffer.getChannelData(0).length; src++, dst+=2) {
+					  interleaved[dst] =   event.inputBuffer.getChannelData(0)[src];
+					}
+
+					var inputbuffer = convertFloat32ToInt16(interleaved);
+
+					var args = {
+						socket_id: socket_id,
+						sampleRate: context_samplerate,
+						bufferSize: wavesurfer.microphone.buffersize,
+						latency: microphone.micContext.baseLatency,
+						sampleformat: sampleformat,
+						stream: inputbuffer
+					};
+					socket.emit( 'binaryData', args );
+
+
+
+				}
+			};
+
+			wavesurfer.microphone.start();
+
+		/*------ BUFFERRING -------*/
+		} else if( method == "bufferRing" ){
+			
 			context.audioWorklet.addModule('js/worklet/microphone-worklet-processor.js').then(() => {
 			  navigator.mediaDevices.getUserMedia( constraints ).then(stream => {
+				
+				  window.stream = stream;
+				  var audioTracks = stream.getAudioTracks();
+				  var kernelBufferSize = parseInt($('#select_setbuffersize').val());
+				  console.log( "buffersize selectionné : " + $('#select_setbuffersize').val() );
 				  
-				window.stream = stream;
-				var audioTracks = stream.getAudioTracks();
+                  debug.append('streaming<br>');
+                  debug.append( 'Got stream with constraints: => ' + JSON.stringify( constraints) + '<br>' );
+                  debug.append( 'Selected audio device => ' + audioSource + '<br>' );
+                  debug.append( 'Using audio device => ' + audioTracks[0].label + '<br>' );
 
-				debug.append('streaming<br>');
-				debug.append( 'Got stream with constraints: => ' + JSON.stringify( constraints) + '<br>' );
-				debug.append( 'Selected audio device => ' + audioSource + '<br>' );
-				debug.append( 'Using audio device => ' + audioTracks[0].label + '<br>' );
+                  debug.append( '----------------------------------<br>' );				  
 
-				debug.append( '----------------------------------<br>' );				  
+                    var audioInput = context.createMediaStreamSource(stream);
+                    recorder = new AudioWorkletNode(
+                      context,
+                      'microphone-worklet-processor',{
+                        /*
+                        channelCount : 1,
+                        processorOptions: {
+                          bufferSize: 128, //output buffer size
+                          capacity:2048 // max fifo capacity
+                        },
+                        */
+						  channelCount : 1,
+						  processorOptions: {
+							  kernelBufferSize: kernelBufferSize,
+							  channelCount: 1,
+                          },
+                      },
+                    );
 				  
-				  const audioInput = context.createMediaStreamSource(stream);
-				  const recorder = new AudioWorkletNode(
-					context,
-					'microphone-worklet-processor',
-					{
-					  channelCount : 1,
-					  processorOptions: {
-						bufferSize: 128, //output buffer size
-						capacity:2048 // max fifo capacity
-					  },
-					},
-				  );
-				  var buffersize = recorder.context.baseLatency * recorder.context.sampleRate * 2;
-				  debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + ', buffersize ' + buffersize + '</br>' );
-				  var tcid = makeid(5);
-				  debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
+                    var buffersize = kernelBufferSize;
+                    //$('#select_buffersize').val( buffersize );
+				  	console.log( "recorder : " , recorder );
 				  
-				  recorder.port.onmessage = ({ data }) => {
-					  $('#'+tcid).html( '<span style="display:block; width:250px;">context time : ' + recorder.context.currentTime + '</span>' );
-					  
-					  
-					  
-					  
-					  // data => Uint8Array(128) et il faudrait un ArrayBuffer(256)
-					  
-					  var array = convertFloat32ToInt16( Float32Array.from(data) ); //Float32Array(128)
-					  
-					  var args = {
-						  socket_id: socket_id,
-						  sampleRate: recorder.context.sampleRate,
-						  bufferSize:buffersize,
-						  latency: recorder.context.baseLatency,
-						  sampleformat:sampleformat,
-						  stream: array 
-					  };
-					  socket.emit( 'binaryData', args );
-					  //console.log( args );
-				  };
-				  audioInput.connect(recorder).connect(context.destination);
-				});
+				  	$('#select_buffersize').val( kernelBufferSize );
+				  
+                    debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + ', buffersize ' + buffersize + '</br>' );
+                    var tcid = makeid(5);
+                    debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
+
+                    recorder.port.onmessage = ({ data }) => {
+                        $('#'+tcid).html( '<span style="display:block; width:250px;">context time : ' + recorder.context.currentTime + '</span>' );
+
+                        var array = convertFloat32ToInt16( data );
+
+                        var args = {
+                            socket_id: socket_id,
+                            sampleRate: recorder.context.sampleRate,
+                            bufferSize: array.length,
+                            latency: recorder.context.baseLatency,
+                            sampleformat:sampleformat,
+                            stream: array 
+                        };
+						//if( args.stream[0] ){
+						   socket.emit( 'binaryData', args );
+							console.log( "envoyé " , args.stream );
+						  // }
+                        
+                        
+                    };
+                    audioInput.connect(recorder);
+                  });
 			});		
 		
-		} else {
+		} else { /*------ NORMAL WORKLET -------*/
 			
 			navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
 				
 				window.stream = stream;
-
 				console.log("stream");
-				
 				debug.append('streaming<br>');
-				//console.log( "streaming" )
 
 				var audioTracks = stream.getAudioTracks();
 
@@ -226,13 +325,24 @@ $( document ).ready(function() {
 				debug.append( '----------------------------------<br>' );
 
 
-				var audioInput = context.createMediaStreamSource(stream);
+				
 				context.audioWorklet.addModule('js/worklet.js').then(() => {
 
-					let recorder = new AudioWorkletNode(context, 'port-processor');
-
-					console.log( device_list );
-
+					recorder = new AudioWorkletNode(context, 'port-processor',{
+						channelCount : 1,
+						channelCountMode : 'explicit',
+						channelInterpretation : 'discrete',
+						processorOptions: {
+							//socket: socket,
+							context_samplerate:context_samplerate,
+						}
+					});
+					console.log( recorder );
+					console.log( "baseLatency = " + recorder.context.baseLatency + " // samplerate = " + recorder.context.sampleRate );
+					console.log( "buffersize = " + recorder.context.baseLatency * recorder.context.sampleRate * 2 );
+					
+					var audioInput = recorder.context.createMediaStreamSource(stream);
+					
 					var buffersize = recorder.context.baseLatency * recorder.context.sampleRate * 2;
 
 					//const inputDevice = recorder.parameters.get('inputDevice');
@@ -248,26 +358,38 @@ $( document ).ready(function() {
 					debug.append( 'context state = ' + recorder.context.state + ', base latency: ' + recorder.context.baseLatency + ', sampleRate ' + recorder.context.sampleRate + ', buffersize ' + buffersize + '</br>' );
 					var tcid = makeid(5);
 					debug.append( '<div style="display:block; width:100%;" id="'+tcid+'"></div>');
-				
+					
+					var nextStartTime = 0;
+					
 					recorder.port.onmessage = (event) => {
-						
-						$('#'+tcid).html( '<span style="display:block; width:250px;">context time : ' + recorder.context.currentTime + '</span>' );
-						
-						//event.data.bufferstream = Float32Array(128);
-						
-                        var array = convertFloat32ToInt16( event.data.bufferstream ); // array = ArrayBuffer(256)
+						if(is_streaming){
+							
+							
+							$('#'+tcid).html( '<span style="display:block; width:100%;">context time : ' + recorder.context.currentTime.toFixed(3) + ' / worklet time : ' + event.data.workletTime.toFixed(3) + '<br>décalage : ' + (recorder.context.currentTime - event.data.workletTime) + '</span>' );
+							/*
+							let fArr = new Float32Array( event.data.bufferstream );
+							let buf = context.createBuffer(1, event.data.bufferstream.byteLength, context_samplerate);
+							buf.copyToChannel(fArr, 0);
+							let player = context.createBufferSource();
+							player.buffer = buf;
+							
+							console.log( buf );*/
+							//event.data.bufferstream = Float32Array(128);
+							
+							var array = convertFloat32ToInt16( event.data.bufferstream ); // array = ArrayBuffer(256)
 
-                        var args = {
-                            socket_id: socket_id,
-                            sampleRate: context_samplerate,
-                            bufferSize:buffersize,
-                            latency: recorder.context.baseLatency,
-							sampleformat:sampleformat,
-                            stream: array
-                        };
-                        socket.emit( 'binaryData', args );
-                       // console.log( args );
-
+							var args = {
+								socket_id: socket_id,
+								sampleRate: context_samplerate,
+								bufferSize:array.byteLength,
+								latency: recorder.context.baseLatency,
+								sampleformat:sampleformat,
+								stream: array
+							};
+							socket.emit( 'binaryData', args );
+							//console.log( args.stream.byteLength );
+							
+						}
 					};
 					
 					
@@ -296,6 +418,19 @@ $( document ).ready(function() {
 		return outputData;
 	}
 	
+	
+	function convertFloat32ToInt16Pouet(buffer) {
+	  var l = buffer.length;  //Buffer
+	  var buf = new Int16Array(l);
+
+	  while (l--) {
+          s = Math.max(-1, Math.min(1, buffer[l]));
+          buf[l] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          //buf[l] = buffer[l]*0xFFFF; //old   //convert to 16 bit
+        
+      }
+	  return buf.buffer;
+	}	
 	
 	function convertFloat32ToInt16(buffer) {
         var l = buffer.length;

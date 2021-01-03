@@ -16,6 +16,10 @@ class PortProcessor extends AudioWorkletProcessor {
 	  ];
     }
 	
+
+
+
+
     constructor( options ) {
 		super( options );
     }
@@ -29,7 +33,7 @@ class PortProcessor extends AudioWorkletProcessor {
 		const deviceChannel = parameters.deviceChannel;
 		
 		//console.log( "device #" + inputDevice + " - channel #" + deviceChannel );
-		//console.log( inputs );
+		console.log( inputs );
 		/*
 		for (var channel = 0; channel < input.length; ++channel) {
 			const inputChannel = input[channel];
@@ -41,9 +45,12 @@ class PortProcessor extends AudioWorkletProcessor {
 			}
 		}
 		*/
+		//console.log("currentTime " + currentTime)
+
 		
         this.port.postMessage({
-          bufferstream:inputs[inputDevice][deviceChannel]	 // <- ici selectionner l'input et la voie
+			workletTime:currentTime,
+			bufferstream:inputs[inputDevice][deviceChannel]	 // <- ici selectionner l'input et la voie
         });
 		
         return true
@@ -51,4 +58,5 @@ class PortProcessor extends AudioWorkletProcessor {
 	
 }
 
+//console.log(sampleRate)
 registerProcessor('port-processor', PortProcessor);
